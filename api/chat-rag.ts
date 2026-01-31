@@ -29,7 +29,7 @@ export default async function handler(req: Request) {
       : [];
 
     const body = {
-      model: 'gpt-4.1-mini',
+      model: 'gpt-4o-mini',
       stream: false,
       metadata: { ui: 'owner', caseId, species },
       input: [
