@@ -19,17 +19,11 @@ export default async function handler(req: Request) {
     }
 
     const vectorStoreId = process.env.OPENAI_VECTOR_STORE_ID;
-    const metaFilter: Record<string, string> = {};
-    if (species) metaFilter.species = species;
-    if (caseId && process.env.RAG_FILTER_CASE_ID === 'true') metaFilter.case_id = caseId;
-    const filters = Object.keys(metaFilter).length ? { document: metaFilter } : undefined;
-
     const tools = vectorStoreId
       ? [
           {
             type: 'file_search' as const,
             vector_store_ids: [vectorStoreId],
-            ...(filters ? { filters } : {}),
           },
         ]
       : [];
