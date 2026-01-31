@@ -18,15 +18,8 @@ export default async function handler(req: Request) {
       return new Response(JSON.stringify({ error: 'Missing message' }), { status: 400 });
     }
 
-    const vectorStoreId = process.env.OPENAI_VECTOR_STORE_ID;
-    const tools = vectorStoreId
-      ? [
-          {
-            type: 'file_search' as const,
-            vector_store_ids: [vectorStoreId],
-          },
-        ]
-      : [];
+    // Temporary: disable file_search to avoid upstream latency/timeouts on Vercel edge
+    const tools: any[] = [];
 
     const body = {
       model: 'gpt-4o-mini',
@@ -48,7 +41,7 @@ export default async function handler(req: Request) {
     };
 
     const controller = new AbortController();
-    const timer = setTimeout(() => controller.abort(), 12000); // avoid Vercel edge 10s+ timeout
+    const timer = setTimeout(() => controller.abort(), 8000); // keep under edge timeout
 
     const resp = await fetch(OPENAI_API_URL, {
       method: 'POST',
