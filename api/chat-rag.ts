@@ -62,16 +62,31 @@ export default async function handler(req: Request) {
     }
 
     const data = await resp.json();
-    // Responses API returns output array; grab first output_text chunk
     const output = data?.output?.[0];
-    const textChunk = output?.content?.find((c: any) => c.type === 'output_text');
-    const answer = textChunk?.text ?? output?.content?.[0]?.text ?? 'No answer returned.';
 
-    const sources = data?.output?.flatMap((o: any) =>
-      o.content?.filter((c: any) => c.type === 'citations') ?? [],
-    );
+    let answer = '';
+    if (output?.type === 'output_text') {
+      answer = output.output_text ?? output.content?.[0]?.text ?? '';
+    } else if (output?.type === 'message' && output.message?.content) {
+      answer = output.message.content
+        .map((c: any) => c.text ?? '')
+        .filter(Boolean)
+        .join('\n')
+        .trim();
+    } else if (output?.content) {
+      answer = output.content
+        .map((c: any) => c.text ?? '')
+        .filter(Boolean)
+        .join('\n')
+        .trim();
+    }
 
-    return new Response(JSON.stringify({ answer, sources }), {
+    const sources =
+      output?.message?.content
+        ?.filter((c: any) => c.type === 'citations')
+        ?.map((c: any) => c.citations) ?? [];
+
+    return new Response(JSON.stringify({ answer: answer || 'No answer returned.', sources }), {
       status: 200,
       headers: { 'Content-Type': 'application/json' },
     });
