@@ -96,3 +96,38 @@ export interface PatientDetail extends PatientRecord {
   vitals: Vital[];
   logs: LogEntry[];
 }
+
+// Owner-facing add-ons
+export interface OwnerTask {
+  id: string;
+  title: string;
+  dueAt: string;
+  status: 'due' | 'overdue' | 'done';
+  type: 'med' | 'visit' | 'monitor';
+}
+
+export interface OutcomeEntry {
+  label: string; // e.g., D1, D2
+  appetite: number; // 0-10
+  energy: number; // 0-10
+  pain: number; // 0-10
+  notedAt: string;
+}
+
+export interface CaseExample {
+  id: string;
+  title: string;
+  species: Species;
+  scenario: string;
+  plan: string;
+  watchouts: string[];
+  severity: 'routine' | 'urgent' | 'emergent';
+}
+
+export interface KnowledgeSnippet {
+  id: string;
+  title: string;
+  source: string;
+  tags: string[];
+  takeaway: string;
+}

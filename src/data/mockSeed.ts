@@ -7,6 +7,10 @@ import type {
   PatientRecord,
   Protocol,
   Vital,
+  OwnerTask,
+  OutcomeEntry,
+  CaseExample,
+  KnowledgeSnippet,
 } from '../types';
 
 const now = new Date();
@@ -122,6 +126,130 @@ const vitals: Vital[] = [
 const logs = [
   { id: 'log-1', medName: 'BPC-157', loggedAt: formatISO(subDays(now, 1)), notes: 'Injected right flank' },
   { id: 'log-2', medName: 'Carboplatin', loggedAt: formatISO(subDays(now, 5)), notes: 'Tolerated well' },
+];
+
+export const ownerTasks: OwnerTask[] = [
+  {
+    id: 'task-1',
+    title: 'Give BPC-157 injection',
+    dueAt: addHours(now, 1).toISOString(),
+    status: 'due',
+    type: 'med',
+  },
+  {
+    id: 'task-2',
+    title: 'Log appetite + stool photo',
+    dueAt: addHours(now, 4).toISOString(),
+    status: 'due',
+    type: 'monitor',
+  },
+  {
+    id: 'task-3',
+    title: 'Oncology recheck (telemed)',
+    dueAt: addHours(now, 30).toISOString(),
+    status: 'overdue',
+    type: 'visit',
+  },
+  {
+    id: 'task-4',
+    title: 'Pain score check-in',
+    dueAt: addHours(now, -2).toISOString(),
+    status: 'done',
+    type: 'monitor',
+  },
+];
+
+export const outcomeTrend: OutcomeEntry[] = [
+  { label: 'D1', appetite: 6, energy: 6, pain: 4, notedAt: subDays(now, 3).toISOString() },
+  { label: 'D2', appetite: 7, energy: 6, pain: 3, notedAt: subDays(now, 2).toISOString() },
+  { label: 'D3', appetite: 8, energy: 7, pain: 3, notedAt: subDays(now, 1).toISOString() },
+  { label: 'D4', appetite: 8, energy: 8, pain: 2, notedAt: now.toISOString() },
+];
+
+export const caseLibrary: CaseExample[] = [
+  {
+    id: 'case-wellness-dog',
+    title: 'Canine wellness + vaccine visit',
+    species: 'canine',
+    scenario: 'Annual wellness exam with DHPP + Lepto boosters; mild anxiety noted.',
+    plan: 'Stagger vaccines, send home gabapentin pre-visit plan, log appetite/energy for 48h.',
+    watchouts: ['Hives or facial swelling', 'Vomiting >2x in 6h', 'Pain at injection site beyond 48h'],
+    severity: 'routine',
+  },
+  {
+    id: 'case-derm-cat',
+    title: 'Feline dermatology flare',
+    species: 'feline',
+    scenario: 'Pruritus with alopecia; suspected flea allergy vs. food.',
+    plan: 'Isoxazoline trial, hypoallergenic diet, weekly photo check-ins, log pruritus score.',
+    watchouts: ['Excoriations with bleeding', 'Lethargy after oral meds', 'Weight loss >5%'],
+    severity: 'urgent',
+  },
+  {
+    id: 'case-gi-dog',
+    title: 'Canine GI upset + dehydration risk',
+    species: 'canine',
+    scenario: 'Soft stool with occasional vomit; on chemo last week.',
+    plan: 'Small frequent meals, maropitant PRN, upload stool photos, hydration checklist.',
+    watchouts: ['Blood in stool', 'More than 2 vomits/12h', 'Lethargy or collapse'],
+    severity: 'urgent',
+  },
+  {
+    id: 'case-hospice-cat',
+    title: 'Feline hospice comfort care',
+    species: 'feline',
+    scenario: 'CKD stage IV with weight loss and intermittent nausea.',
+    plan: 'Daily appetite/energy/pain scores, subQ fluids schedule, anti-nausea PRN, weekly telemed.',
+    watchouts: ['No urination in 12h', 'Severe dyspnea', 'Uncontrolled pain despite meds'],
+    severity: 'emergent',
+  },
+  {
+    id: 'case-ortho-dog',
+    title: 'Post-op TPLO recheck',
+    species: 'canine',
+    scenario: 'Week 3 post-op; owner anxious about incision warmth.',
+    plan: 'Photo upload with thermal check guidance, leash-only walks, PT video, tramadol taper.',
+    watchouts: ['Incision discharge', 'Fever >103F', 'Non-weight bearing beyond 24h'],
+    severity: 'urgent',
+  },
+];
+
+export const knowledgeBase: KnowledgeSnippet[] = [
+  {
+    id: 'kb-discharge',
+    title: 'Standard discharge instructions template',
+    source: 'Clinic playbook',
+    tags: ['owner', 'discharge', 'safety'],
+    takeaway: 'Always include red-flag symptoms, med schedule table, and ER contact block.',
+  },
+  {
+    id: 'kb-dosing',
+    title: 'BPC-157 injection guidance',
+    source: 'Protocol library',
+    tags: ['peptide', 'chemo-adjunct', 'owner'],
+    takeaway: 'Rotate sites, never double-dose; contact clinic if dose is >12h late on chemo days.',
+  },
+  {
+    id: 'kb-gi',
+    title: 'GI upset triage (chemo patients)',
+    source: 'Safety rules',
+    tags: ['triage', 'chemo', 'GI'],
+    takeaway: 'If vomiting >2x in 12h or blood present, escalate to nurse triage within 2h.',
+  },
+  {
+    id: 'kb-pain',
+    title: 'Pain score rubric (0–10)',
+    source: 'Owner education',
+    tags: ['pain', 'monitoring'],
+    takeaway: 'Scores ≥6 with limping warrant provider review; ≥8 require same-day contact.',
+  },
+  {
+    id: 'kb-hospice',
+    title: 'Hospice comfort checklist',
+    source: 'Palliative guide',
+    tags: ['hospice', 'cat'],
+    takeaway: 'Track appetite, hydration, mobility daily; pre-authorize ER if dyspnea develops.',
+  },
 ];
 
 export const patients: PatientRecord[] = [

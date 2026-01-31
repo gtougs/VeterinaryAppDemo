@@ -15,6 +15,12 @@ import {
   ShieldCheck,
   Sparkles,
   Download,
+  CheckCircle2,
+  Clock3,
+  AlertTriangle,
+  FileText,
+  ListChecks,
+  LineChart,
 } from 'lucide-react';
 import {
   ResponsiveContainer,
@@ -26,8 +32,8 @@ import {
 } from 'recharts';
 import { format } from 'date-fns';
 import { useUI } from './state/ui';
-import { patientDetail, patients } from './data/mockSeed';
-import type { LogEntry, Medication, PatientRecord } from './types';
+import { patientDetail, patients, ownerTasks, outcomeTrend, caseLibrary, knowledgeBase } from './data/mockSeed';
+import type { LogEntry, Medication, PatientRecord, OwnerTask } from './types';
 import { useDropzone } from 'react-dropzone';
 import './index.css';
 
@@ -197,7 +203,6 @@ function FeatureCard({ icon, title, desc }: { icon: ReactNode; title: string; de
 function OwnerApp() {
   const { ownerTab, setOwnerTab, setView } = useUI();
   const nextDose = patientDetail.protocols[0].meds[0];
-  const weightTrend = patientDetail.vitals.map((v, i) => ({ label: `D${i + 1}`, weight: v.weightKg }));
 
   const tabButton = (tab: typeof ownerTab, label: string, icon: React.ReactNode) => (
     <button
@@ -264,22 +269,9 @@ function OwnerApp() {
                   <StatCard label="Adherence" value="94%" />
                   <StatCard label="Days left" value="14" />
                 </div>
-                <div className="rounded-2xl border border-slate-200 p-4">
-                  <div className="flex items-center justify-between">
-                    <p className="font-semibold">Weight trend</p>
-                    <span className="text-xs text-slate-500">past week</span>
-                  </div>
-                  <div className="h-32">
-                    <ResponsiveContainer width="100%" height="100%">
-                      <BarChart data={weightTrend}>
-                        <CartesianGrid strokeDasharray="3 3" vertical={false} />
-                        <XAxis dataKey="label" axisLine={false} tickLine={false} />
-                        <Tooltip />
-                        <Bar dataKey="weight" fill="#1585a0" radius={[6, 6, 0, 0]} />
-                      </BarChart>
-                    </ResponsiveContainer>
-                  </div>
-                </div>
+                <TaskList tasks={ownerTasks} />
+                <OutcomeCard />
+                <OwnerTimeline />
               </div>
             )}
 
@@ -319,6 +311,155 @@ function StatCard({ label, value }: { label: string; value: string }) {
     <div className="rounded-2xl border border-slate-200 bg-white p-3 text-center">
       <p className="text-xs text-slate-500">{label}</p>
       <p className="text-xl font-semibold text-slate-900">{value}</p>
+    </div>
+  );
+}
+
+function TaskList({ tasks }: { tasks: OwnerTask[] }) {
+  const statusColor: Record<OwnerTask['status'], string> = {
+    due: 'bg-amber-100 text-amber-800',
+    overdue: 'bg-rose-100 text-rose-800',
+    done: 'bg-emerald-100 text-emerald-800',
+  };
+
+  const typeIcon: Record<OwnerTask['type'], React.ReactNode> = {
+    med: <Syringe className="h-4 w-4" />,
+    monitor: <Activity className="h-4 w-4" />,
+    visit: <Stethoscope className="h-4 w-4" />,
+  };
+
+  const formatTime = (iso: string) => format(new Date(iso), 'EEE h a');
+
+  return (
+    <div className="rounded-2xl border border-slate-200 bg-white p-4">
+      <div className="mb-2 flex items-center justify-between">
+        <div className="flex items-center gap-2">
+          <ListChecks className="h-4 w-4 text-primary-600" />
+          <p className="font-semibold">Today&apos;s tasks</p>
+        </div>
+        <span className="text-xs text-slate-500">Owner view</span>
+      </div>
+      <div className="space-y-2">
+        {tasks.map((task) => (
+          <div key={task.id} className="flex items-center justify-between rounded-xl border border-slate-100 px-3 py-2">
+            <div className="flex items-center gap-3">
+              <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-slate-100 text-slate-700">
+                {typeIcon[task.type]}
+              </div>
+              <div>
+                <p className="text-sm font-semibold text-slate-900">{task.title}</p>
+                <p className="text-xs text-slate-500">{formatTime(task.dueAt)}</p>
+              </div>
+            </div>
+            <span className={`rounded-full px-2 py-1 text-[11px] font-semibold ${statusColor[task.status]}`}>
+              {task.status}
+            </span>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function OutcomeCard() {
+  const colors = {
+    appetite: '#0ea5e9',
+    energy: '#8b5cf6',
+    pain: '#f97316',
+  };
+
+  return (
+    <div className="rounded-2xl border border-slate-200 bg-white p-4">
+      <div className="mb-2 flex items-center justify-between">
+        <div className="flex items-center gap-2">
+          <LineChart className="h-4 w-4 text-primary-600" />
+          <p className="font-semibold">Outcome tracking</p>
+        </div>
+        <span className="text-xs text-slate-500">Owner-reported</span>
+      </div>
+      <div className="flex items-center gap-3 text-xs text-slate-600">
+        <LegendSwatch color={colors.appetite} label="Appetite" />
+        <LegendSwatch color={colors.energy} label="Energy" />
+        <LegendSwatch color={colors.pain} label="Pain (lower better)" />
+      </div>
+      <div className="mt-2 h-32">
+        <ResponsiveContainer width="100%" height="100%">
+          <BarChart data={outcomeTrend}>
+            <CartesianGrid strokeDasharray="3 3" vertical={false} />
+            <XAxis dataKey="label" axisLine={false} tickLine={false} />
+            <Tooltip />
+            <Bar dataKey="appetite" fill={colors.appetite} radius={[6, 6, 0, 0]} />
+            <Bar dataKey="energy" fill={colors.energy} radius={[6, 6, 0, 0]} />
+            <Bar dataKey="pain" fill={colors.pain} radius={[6, 6, 0, 0]} />
+          </BarChart>
+        </ResponsiveContainer>
+      </div>
+      <p className="mt-2 text-[11px] text-slate-500">Pain bars should trend downward; appetite upward.</p>
+    </div>
+  );
+}
+
+function LegendSwatch({ color, label }: { color: string; label: string }) {
+  return (
+    <span className="flex items-center gap-2">
+      <span className="h-2 w-4 rounded-full" style={{ background: color }} />
+      {label}
+    </span>
+  );
+}
+
+function OwnerTimeline() {
+  const events = [
+    ...ownerTasks.map((t) => ({
+      id: `task-${t.id}`,
+      kind: 'task',
+      title: t.title,
+      time: t.dueAt,
+      detail: t.status,
+    })),
+    ...patientDetail.logs.map((l) => ({
+      id: `log-${l.id}`,
+      kind: 'log',
+      title: `${l.medName} logged`,
+      time: l.loggedAt,
+      detail: l.notes ?? '',
+    })),
+    ...patientDetail.adverseEvents.map((ae) => ({
+      id: `ae-${ae.id}`,
+      kind: 'ae',
+      title: ae.symptom,
+      time: ae.occurredAt,
+      detail: ae.severity,
+    })),
+  ].sort((a, b) => new Date(b.time).getTime() - new Date(a.time).getTime());
+
+  const iconFor = (kind: string) => {
+    if (kind === 'task') return <CheckCircle2 className="h-4 w-4 text-emerald-600" />;
+    if (kind === 'ae') return <AlertTriangle className="h-4 w-4 text-amber-600" />;
+    return <FileText className="h-4 w-4 text-primary-600" />;
+  };
+
+  return (
+    <div className="rounded-2xl border border-slate-200 bg-white p-4">
+      <div className="mb-2 flex items-center justify-between">
+        <div className="flex items-center gap-2">
+          <Clock3 className="h-4 w-4 text-primary-600" />
+          <p className="font-semibold">Timeline</p>
+        </div>
+        <span className="text-xs text-slate-500">Last 48 hours</span>
+      </div>
+      <div className="space-y-2">
+        {events.slice(0, 6).map((ev) => (
+          <div key={ev.id} className="flex items-start gap-3 rounded-xl bg-slate-50 px-3 py-2">
+            <div className="mt-1">{iconFor(ev.kind)}</div>
+            <div className="flex-1">
+              <p className="text-sm font-semibold text-slate-900">{ev.title}</p>
+              <p className="text-xs text-slate-500">{format(new Date(ev.time), 'PPpp')}</p>
+              {ev.detail && <p className="text-xs text-slate-600">{ev.detail}</p>}
+            </div>
+          </div>
+        ))}
+      </div>
     </div>
   );
 }
@@ -388,33 +529,81 @@ function OwnerChat() {
     },
   });
 
+  const quickPrompts = [
+    'Summarize today for my vet',
+    'When should I escalate vomiting?',
+    'Explain the pain score rubric',
+    'Remind me how to rotate injection sites',
+  ];
+
   const send = () => {
     if (!input.trim()) return;
     const newMessage = { id: Date.now(), sender: 'user', text: input.trim() };
     setMessages((m) => [...m, newMessage]);
     setInput('');
     setTyping(true);
-    setTimeout(() => {
+    callRag(input.trim());
+  };
+
+  const callRag = async (message: string) => {
+    try {
+      const resp = await fetch('/api/chat-rag', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ message, caseId: 'p-1', species: 'canine' }),
+      });
+      if (!resp.ok) throw new Error(await resp.text());
+      const data = await resp.json();
+      setMessages((m) => [
+        ...m,
+        { id: Date.now() + 1, sender: 'ai', text: data.answer ?? 'No response' },
+      ]);
+    } catch (err) {
       setMessages((m) => [
         ...m,
         {
           id: Date.now() + 1,
           sender: 'ai',
           text:
-            'For safety, do not change dose without your clinic. If vomiting or diarrhea occurs, log it and contact the care team.',
+            'Live AI unavailable right now. For safety, do not change doses. If vomiting or diarrhea occurs, log it and contact the care team.',
         },
       ]);
+    } finally {
       setTyping(false);
-    }, 900);
+    }
   };
 
   return (
     <div className="space-y-3">
+      <div className="rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs text-slate-600">
+        <div className="mb-1 flex items-center gap-2 text-[11px] font-semibold uppercase tracking-wide text-primary-700">
+          <Sparkles className="h-3 w-3" />
+          AI is using these snippets
+        </div>
+        <div className="flex flex-wrap gap-2">
+          {knowledgeBase.slice(0, 3).map((kb) => (
+            <span key={kb.id} className="rounded-full bg-slate-100 px-3 py-1 text-[11px] font-semibold text-slate-700">
+              {kb.title}
+            </span>
+          ))}
+        </div>
+      </div>
       <div className="h-72 overflow-y-auto rounded-2xl border border-slate-200 bg-slate-50/60 p-3">
         {messages.map((msg) => (
           <ChatBubble key={msg.id} sender={msg.sender as 'user' | 'ai'} text={msg.text} />
         ))}
         {typing && <ChatBubble sender="ai" text="Typing..." muted />}
+      </div>
+      <div className="flex flex-wrap gap-2 text-xs">
+        {quickPrompts.map((p) => (
+          <button
+            key={p}
+            onClick={() => setInput(p)}
+            className="rounded-full border border-slate-200 bg-white px-3 py-1 font-semibold text-slate-700 hover:border-primary-400 hover:text-primary-700"
+          >
+            {p}
+          </button>
+        ))}
       </div>
       <div
         {...getRootProps()}
@@ -482,19 +671,62 @@ function ChatBubble({ sender, text, muted }: { sender: 'user' | 'ai'; text: stri
 }
 
 function LearnTab() {
-  const cards = [
-    { title: 'When to call your vet', duration: '3 min read' },
-    { title: 'Managing chemo nausea', duration: '6 min read' },
-    { title: 'Injection site rotation', duration: '4 min read' },
-  ];
   return (
-    <div className="grid gap-3">
-      {cards.map((c) => (
-        <div key={c.title} className="rounded-2xl border border-slate-200 bg-white p-4">
-          <h4 className="font-semibold">{c.title}</h4>
-          <p className="text-xs text-slate-500">{c.duration}</p>
+    <div className="space-y-4">
+      <div className="rounded-2xl border border-slate-200 bg-white p-4">
+        <div className="mb-2 flex items-center gap-2">
+          <FileText className="h-4 w-4 text-primary-600" />
+          <p className="font-semibold">Example case library</p>
         </div>
-      ))}
+        <div className="space-y-3">
+          {caseLibrary.map((c) => (
+            <div key={c.id} className="rounded-xl border border-slate-100 bg-slate-50 px-3 py-2">
+              <div className="flex items-center justify-between">
+                <p className="text-sm font-semibold text-slate-900">{c.title}</p>
+                <span
+                  className={`rounded-full px-2 py-1 text-[11px] font-semibold ${
+                    c.severity === 'emergent'
+                      ? 'bg-rose-100 text-rose-800'
+                      : c.severity === 'urgent'
+                        ? 'bg-amber-100 text-amber-800'
+                        : 'bg-emerald-100 text-emerald-800'
+                  }`}
+                >
+                  {c.severity}
+                </span>
+              </div>
+              <p className="text-xs text-slate-600">{c.scenario}</p>
+              <p className="text-xs text-slate-700">
+                Plan: <span className="font-semibold">{c.plan}</span>
+              </p>
+              <p className="text-[11px] text-slate-500">Watchouts: {c.watchouts.join(', ')}</p>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      <div className="rounded-2xl border border-slate-200 bg-white p-4">
+        <div className="mb-2 flex items-center gap-2">
+          <Brain className="h-4 w-4 text-primary-600" />
+          <p className="font-semibold">Knowledge snippets (used by AI)</p>
+        </div>
+        <div className="grid gap-2">
+          {knowledgeBase.map((kb) => (
+            <div key={kb.id} className="rounded-xl border border-slate-100 bg-slate-50 px-3 py-2">
+              <div className="flex items-center gap-2">
+                <span className="rounded-full bg-primary-50 px-2 py-1 text-[11px] font-semibold text-primary-700">{kb.source}</span>
+                <span className="text-sm font-semibold text-slate-900">{kb.title}</span>
+              </div>
+              <p className="text-xs text-slate-600">{kb.takeaway}</p>
+              <div className="mt-1 flex flex-wrap gap-1 text-[11px] text-slate-500">
+                {kb.tags.map((t) => (
+                  <span key={t} className="rounded-full bg-white px-2 py-0.5">{t}</span>
+                ))}
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
     </div>
   );
 }
