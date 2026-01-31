@@ -47,6 +47,9 @@ export default async function handler(req: Request) {
         : {}),
     };
 
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), 12000); // avoid Vercel edge 10s+ timeout
+
     const resp = await fetch(OPENAI_API_URL, {
       method: 'POST',
       headers: {
@@ -54,11 +57,15 @@ export default async function handler(req: Request) {
         Authorization: `Bearer ${process.env.OPENAI_API_KEY ?? ''}`,
       },
       body: JSON.stringify(body),
-    });
+      signal: controller.signal,
+    }).finally(() => clearTimeout(timer));
 
     if (!resp.ok) {
       const text = await resp.text();
-      return new Response(JSON.stringify({ error: text || resp.statusText }), { status: resp.status });
+      return new Response(
+        JSON.stringify({ error: text || resp.statusText, status: resp.status }),
+        { status: resp.status, headers: { 'Content-Type': 'application/json' } },
+      );
     }
 
     const data = await resp.json();
