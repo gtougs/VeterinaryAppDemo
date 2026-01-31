@@ -8,7 +8,7 @@ You are the VetCare owner-facing assistant. Guardrails:
 - Always list 2–3 red-flag symptoms to escalate.
 - Keep replies concise and in plain language.
 - If uncertain, say so and point to contacting the clinic.
-Return short bullets and cite the source titles if available.
+Return short bullets using plain text (no markdown/bold/asterisks). Cite source titles in parentheses if available.
 `;
 
 export default async function handler(req: Request) {
@@ -18,8 +18,16 @@ export default async function handler(req: Request) {
       return new Response(JSON.stringify({ error: 'Missing message' }), { status: 400 });
     }
 
-    // Temporary: disable file_search to avoid upstream latency/timeouts on Vercel edge
-    const tools: any[] = [];
+    const vectorStoreId = process.env.OPENAI_VECTOR_STORE_ID;
+    const tools = vectorStoreId
+      ? [
+          {
+            type: 'file_search' as const,
+            vector_store_ids: [vectorStoreId],
+            // No filters to avoid schema errors; rely on small corpus
+          },
+        ]
+      : [];
 
     const body = {
       model: 'gpt-4o-mini',
@@ -29,6 +37,7 @@ export default async function handler(req: Request) {
         { role: 'system', content: SYSTEM_PROMPT },
         { role: 'user', content: message },
       ],
+      max_output_tokens: 180,
       tools,
       // tighten retrieval if we have metadata
       ...(tools.length
